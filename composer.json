@@ -1,0 +1,68 @@
+{
+    "name": "sugarcommerce/support",
+    "description": "The array moves every plugin writes again -- dotted paths, grouping, plucking, select options -- and finding a post, term or user from whatever somebody typed: an id, a slug, a title, an email.",
+    "homepage": "https://github.com/SugarCommerce/support",
+    "type": "library",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "David Sherlock",
+            "homepage": "https://arraypress.com/"
+        }
+    ],
+    "keywords": [
+        "wordpress",
+        "array",
+        "dot-notation",
+        "pluck",
+        "group-by",
+        "select-options",
+        "posts",
+        "terms",
+        "users",
+        "lookup"
+    ],
+    "require": {
+        "php": ">=8.3"
+    },
+    "require-dev": {
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpunit/phpunit": "^12.0",
+        "squizlabs/php_codesniffer": "^3.13.5",
+        "wp-coding-standards/wpcs": "^3.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "SugarCommerce\\Support\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SugarCommerce\\Support\\Tests\\": "tests/"
+        },
+        "exclude-from-classmap": [
+            "/tests/bootstrap.php",
+            "/tests/stubs.php"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "preferred-install": "dist",
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs",
+        "format": "phpcbf --standard=phpcs-format.xml.dist",
+        "format:check": "phpcs --standard=phpcs-format.xml.dist"
+    },
+    "support": {
+        "issues": "https://github.com/SugarCommerce/support/issues",
+        "source": "https://github.com/SugarCommerce/support"
+    }
+}
