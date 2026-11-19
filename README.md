@@ -1,6 +1,7 @@
 # Support
 
-The array moves every plugin writes again, and finding a post, term or user from whatever somebody typed.
+The array moves every plugin writes again, finding a post, term or user from whatever somebody typed, and the
+stored-value helpers: a cache that can keep `false`, cleanup by prefix, and casts back from the options table.
 
 ## What it does
 
@@ -12,6 +13,9 @@ And every plugin is handed a post, a term or a user in whatever form the caller 
 from a URL, a title from a CSV, an email from a checkout, a `WP_Post` from a hook. Core has a different function for
 each and a different kind of nothing when it misses -- `false`, `null`, or a `WP_Error`, which is truthy. `Posts`,
 `Terms` and `Users` take any of them and answer with the object or `null`.
+
+And everything a plugin keeps in the options table comes back a string, its transients cannot tell a cached `false`
+from nothing, and its uninstall has to find every key it ever wrote. `Cache`, `Cast` and `Cleanup` do those three.
 
 ## Features
 
@@ -27,6 +31,9 @@ each and a different kind of nothing when it misses -- `false`, `null`, or a `WP
 * Several at once, in the order named, each once
 * Search for an autocomplete, with options ready for a select
 * Lookups that resolved are remembered for the request
+* Cache-or-compute that can store `false`
+* Delete options, transients and meta by prefix on uninstall, the underscore a literal one
+* Read stored values back as booleans, numbers, id lists and string lists
 
 ## Installation
 
@@ -201,12 +208,66 @@ two customers called John Smith are otherwise the same option. Posts are searche
 These are for a quick server-side lookup. A paginated, REST-backed picker is `sugarcommerce/fields`'
 `Search\PostSource`, `TermSource` and `UserSource`.
 
+## Cache, cleanup and casts
+
+`get_transient()` returns `false` both when nothing is cached and when the
+cached value *is* `false`, so the cache-or-compute pattern gets written by
+hand, subtly wrong, in every plugin. `Cache::remember()` wraps the stored
+value so the two are distinguishable.
+
+```php
+use SugarCommerce\Support\Cache;
+use SugarCommerce\Support\Cast;
+use SugarCommerce\Support\Cleanup;
+
+// Computed once an hour, and it can legitimately return false.
+$eligible = Cache::remember( 'myplugin_eligible_' . $user_id, fn() => check( $user_id ) );
+
+Cache::has( $key );         // true even when what is stored is false
+Cache::get( $key, 'none' ); // what is kept -- false included -- or the default
+Cache::set( $key, false );  // kept as false, not as nothing
+Cache::forget( $key );
+
+// On uninstall, take everything with you.
+Cleanup::options( 'myplugin_' );
+Cleanup::transients( 'myplugin_' );    // both halves, so nothing is orphaned
+Cleanup::meta( '_myplugin_', 'post' );
+```
+
+The prefix goes through `esc_like()`, so the underscore in `myplugin_` is a
+literal one rather than SQL's single-character wildcard. An empty prefix
+deletes nothing, and a meta type core has no table for deletes nothing.
+
+Anything out of the options table is a string. `Cast` reads it back as what it
+was meant to be:
+
+```php
+Cast::bool( 'false' );                 // false -- PHP says true
+Cast::int( get_option( 'limit' ), 5 );
+Cast::ids( '[5,"7",0,5]' );            // [5, 7] from a JSON column
+Cast::ids( '5, 7' );                   // [5, 7] from typed text
+Cast::strings( $row->features, 'sanitize_text_field' );
+```
+
+| Method | Keeps | Drops |
+|---|---|---|
+| `Cast::array( $value )` | every entry, re-indexed | nothing (`null`, `''` and `false` are an empty list) |
+| `Cast::ids( $value )` | positive integers (`absint`) | zero, duplicates, nested arrays |
+| `Cast::strings( $value, $clean = null )` | trimmed, cleaned scalars | blanks, duplicates, nested arrays |
+
+A string that opens with `[` or `{` is read as JSON. If that JSON is broken
+the list is empty rather than a comma split of the brackets.
+
 ## Moving from arraypress/wp-*
 
 | Was | Now |
 |---|---|
 | `ArrayPress\ArrayUtils\Arr` | `SugarCommerce\Support\Arr` -- every method the same name |
 | `ArrayPress\ObjectUtils\Posts`, `Terms`, `Users` | `SugarCommerce\Support\Posts`, `Terms`, `Users` -- the same methods |
+| `ArrayPress\StorageUtils\Cache::remember()`, `has()`, `forget()` | `SugarCommerce\Support\Cache::` the same, plus `get()` and `set()`; values already cached are still read |
+| `ArrayPress\StorageUtils\Cast::bool()`, `int()`, `float()`, `array()`, `ids()`, `strings()` | `SugarCommerce\Support\Cast::` the same |
+| `ArrayPress\StorageUtils\Cleanup::options()`, `transients()`, `meta()` | `SugarCommerce\Support\Cleanup::` the same |
+| `SugarCommerce\Storage\Cache`, `Cast`, `Cleanup` (in `sugarcommerce/storage` for a while) | `SugarCommerce\Support\Cache`, `Cast`, `Cleanup` -- moved whole, same behaviour |
 
 Answers that changed:
 
@@ -224,7 +285,7 @@ memo and `reset()` on `Posts`, `Terms` and `Users`.
 ## Requirements
 
 * PHP 8.3 or later
-* WordPress 7.1 or later, for `Posts`, `Terms` and `Users`; `Arr` is plain PHP
+* WordPress 7.1 or later, for `Posts`, `Terms`, `Users`, `Cache` and `Cleanup`; `Arr` is plain PHP
 
 ## License
 

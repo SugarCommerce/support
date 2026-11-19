@@ -1,6 +1,6 @@
 {
     "name": "sugarcommerce/support",
-    "description": "The array moves every plugin writes again -- dotted paths, grouping, plucking, select options -- and finding a post, term or user from whatever somebody typed: an id, a slug, a title, an email.",
+    "description": "The array moves every plugin writes again -- dotted paths, grouping, plucking, select options -- finding a post, term or user from whatever somebody typed, a cache that can keep false, cleanup by prefix on uninstall, and reading stored values back as what they were.",
     "homepage": "https://github.com/SugarCommerce/support",
     "type": "library",
     "license": "GPL-2.0-or-later",
@@ -20,7 +20,11 @@
         "posts",
         "terms",
         "users",
-        "lookup"
+        "lookup",
+        "transients",
+        "cache",
+        "uninstall",
+        "cast"
     ],
     "require": {
         "php": ">=8.3"
@@ -42,7 +46,8 @@
         },
         "exclude-from-classmap": [
             "/tests/bootstrap.php",
-            "/tests/stubs.php"
+            "/tests/stubs.php",
+            "/tests/stubs-stored.php"
         ]
     },
     "config": {
