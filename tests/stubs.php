@@ -52,6 +52,14 @@ class WP_User {
 
 class WP_Error {
 	public function __construct( public string $code = 'error', public string $message = '' ) {}
+
+	public function get_error_code(): string {
+		return $this->code;
+	}
+
+	public function get_error_message(): string {
+		return $this->message;
+	}
 }
 
 /**
@@ -266,4 +274,19 @@ function get_users( array $args = [] ) {
 	}
 
 	return $found;
+}
+
+if ( ! function_exists( '__' ) ) {
+	function __( $text, $domain = 'default' ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'wp_timezone' ) ) {
+	/**
+	 * The site's timezone: `ou_timezone`, UTC when unset.
+	 */
+	function wp_timezone() {
+		return new DateTimeZone( $GLOBALS['ou_timezone'] ?? 'UTC' );
+	}
 }

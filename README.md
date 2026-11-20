@@ -34,6 +34,7 @@ from nothing, and its uninstall has to find every key it ever wrote. `Cache`, `C
 * Cache-or-compute that can store `false`
 * Delete options, transients and meta by prefix on uninstall, the underscore a literal one
 * Read stored values back as booleans, numbers, id lists and string lists
+* Cast what somebody typed to its declared type without guessing: a price, a yes/no, a date in a given format
 
 ## Installation
 
@@ -257,6 +258,23 @@ Cast::strings( $row->features, 'sanitize_text_field' );
 
 A string that opens with `[` or `{` is read as JSON. If that JSON is broken
 the list is empty rather than a comma split of the brackets.
+
+What somebody typed -- a CSV cell, a form field -- is cast to the type it is
+declared as with `Cast::to()`: forgiving about how it is written, strict about
+what it means. A value it cannot read is handed back untouched for the caller
+to refuse, never turned into `0` or `false`; a yes/no that is neither is a
+`WP_Error`. Dates are read and written in the site's timezone, and a declared
+`date_format` is held to exactly (`2026-13-45` is not rolled into 2027).
+sugarcommerce/importers casts every cell with it.
+
+```php
+Cast::to( '£1,299.00', 'number' );                                // 1299.0
+Cast::to( '12.00', 'integer' );                                   // 12; '12.9' comes back as it was
+Cast::to( 'Ys', 'boolean' );                                      // WP_Error invalid_boolean
+Cast::to( '03/04/2026', 'date', [ 'date_format' => 'd/m/Y' ] );   // '2026-04-03'
+Cast::to( ' gbp ', 'currency' );                                  // 'GBP'
+Cast::SCALARS;                                                    // the types it knows
+```
 
 ## Security
 
