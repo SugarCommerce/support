@@ -258,29 +258,13 @@ Cast::strings( $row->features, 'sanitize_text_field' );
 A string that opens with `[` or `{` is read as JSON. If that JSON is broken
 the list is empty rather than a comma split of the brackets.
 
-## Moving from arraypress/wp-*
+## Security
 
-| Was | Now |
-|---|---|
-| `ArrayPress\ArrayUtils\Arr` | `SugarCommerce\Support\Arr` -- every method the same name |
-| `ArrayPress\ObjectUtils\Posts`, `Terms`, `Users` | `SugarCommerce\Support\Posts`, `Terms`, `Users` -- the same methods |
-| `ArrayPress\StorageUtils\Cache::remember()`, `has()`, `forget()` | `SugarCommerce\Support\Cache::` the same, plus `get()` and `set()`; values already cached are still read |
-| `ArrayPress\StorageUtils\Cast::bool()`, `int()`, `float()`, `array()`, `ids()`, `strings()` | `SugarCommerce\Support\Cast::` the same |
-| `ArrayPress\StorageUtils\Cleanup::options()`, `transients()`, `meta()` | `SugarCommerce\Support\Cleanup::` the same |
-| `SugarCommerce\Storage\Cache`, `Cast`, `Cleanup` (in `sugarcommerce/storage` for a while) | `SugarCommerce\Support\Cache`, `Cast`, `Cleanup` -- moved whole, same behaviour |
-
-Answers that changed:
-
-* `Arr::get()` and `has()`: a literal dotted key holding `null` answers; it fell through to the path walk and could
-  answer from another branch.
-* `Arr::to_options()`: a label that is not text -- an array under the label key, a plain object, `null` -- is the key.
-  It was "Array" with a warning, a fatal error, or blank. Objects are read as rows too, and a `Stringable` is its
-  string.
-* `Posts::find()`, `exists()` and `id()`: the type and status are checked for an id or an object too. A post of
-  another type, or a draft asked for as `'publish'`, is `null`; it was returned.
-
-New: `pluck()`'s `$index`; a `$status` argument on `Posts::find_many()`, `exists()` and `id()`; the per-request
-memo and `reset()` on `Posts`, `Terms` and `Users`.
+* Finds options, transients and meta to clean up with `esc_like()` and `$wpdb->prepare()`, and interpolates a meta table only after its type matched a fixed list, so a prefix cannot widen the delete
+* Deletes nothing for an empty prefix or a meta type core has no table for
+* Reads a JSON list only after `json_validate()` says it is one, so a broken or absurdly nested string costs nothing
+* Searches posts among those published, and returns nothing for an empty search rather than everything
+* Checks no capability itself: a user search matches emails, so a route that offers one should ask `list_users` first
 
 ## Requirements
 
