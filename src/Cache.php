@@ -36,7 +36,7 @@ final class Cache {
 	 * being kept: two transients can expire independently, and then the
 	 * marker says yes while the value is gone.
 	 */
-	private const WRAPPER = '__storage_utils_v1';
+	private const string WRAPPER = '__storage_utils_v1';
 
 	/**
 	 * Fetch a value, or work it out and keep it.

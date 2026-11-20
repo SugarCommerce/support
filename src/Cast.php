@@ -108,6 +108,12 @@ final class Cast {
 			$value = trim( $value );
 
 			if ( str_starts_with( $value, '[' ) || str_starts_with( $value, '{' ) ) {
+				// Validated first: a malformed or absurdly nested string is
+				// refused without building half a structure to throw away.
+				if ( ! json_validate( $value ) ) {
+					return array();
+				}
+
 				$decoded = json_decode( $value, true );
 
 				return is_array( $decoded ) ? array_values( $decoded ) : array();
